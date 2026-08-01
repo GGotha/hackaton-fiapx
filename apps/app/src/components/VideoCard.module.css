@@ -1,0 +1,123 @@
+.card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 18px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+}
+
+.card:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-hover);
+}
+
+.thumb {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  color: var(--accent);
+  background: var(--info-bg);
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+}
+
+.headline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.name {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 340px;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 6px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.metaItem {
+  position: relative;
+  padding-left: 14px;
+}
+
+.metaItem::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  transform: translateY(-50%);
+}
+
+.download {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  height: 38px;
+  padding: 0 15px;
+  border-radius: var(--radius-sm);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    opacity 0.2s,
+    box-shadow 0.2s;
+}
+
+.download:not(:disabled):hover {
+  box-shadow: 0 10px 26px -12px rgba(37, 99, 235, 0.8);
+}
+
+.download:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+  background: var(--surface-strong);
+  color: var(--text-dim);
+  border-color: var(--border);
+}
+
+.spinner {
+  animation: fiapx-spin 0.9s linear infinite;
+}
+
+@media (max-width: 620px) {
+  .name {
+    max-width: 200px;
+  }
+  .downloadLabel {
+    display: none;
+  }
+}
