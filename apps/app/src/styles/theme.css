@@ -1,9 +1,10 @@
 :root {
   color-scheme: dark;
 
-  --accent: #3b82f6;
-  --accent-strong: #2563eb;
-  --cyan: #22d3ee;
+  --accent: #ed145b;
+  --accent-strong: #c20f4b;
+  --cyan: #ff5c9d;
+  --brand-gradient: linear-gradient(135deg, #ed145b 0%, #ff5c9d 100%);
 
   --radius-sm: 10px;
   --radius-md: 16px;
@@ -22,10 +23,10 @@
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --bg: #070a12;
-  --bg-elevated: #0a0e1a;
-  --glow-a: rgba(59, 130, 246, 0.22);
-  --glow-b: rgba(34, 211, 238, 0.12);
+  --bg: #0a0a0e;
+  --bg-elevated: #121017;
+  --glow-a: rgba(237, 20, 91, 0.22);
+  --glow-b: rgba(237, 20, 91, 0.1);
 
   --surface: rgba(255, 255, 255, 0.035);
   --surface-hover: rgba(255, 255, 255, 0.06);
@@ -41,7 +42,7 @@
   --field-bg: rgba(10, 14, 26, 0.6);
 
   --shadow-md: 0 18px 50px -24px rgba(0, 0, 0, 0.85);
-  --shadow-glow: 0 0 0 1px rgba(59, 130, 246, 0.28), 0 20px 60px -20px rgba(37, 99, 235, 0.55);
+  --shadow-glow: 0 0 0 1px rgba(237, 20, 91, 0.3), 0 20px 60px -20px rgba(237, 20, 91, 0.5);
 
   --success: #34d399;
   --success-bg: rgba(52, 211, 153, 0.12);
@@ -56,10 +57,10 @@
 :root[data-theme="light"] {
   color-scheme: light;
 
-  --bg: #eef2fb;
+  --bg: #f6f7f9;
   --bg-elevated: #ffffff;
-  --glow-a: rgba(59, 130, 246, 0.18);
-  --glow-b: rgba(34, 211, 238, 0.14);
+  --glow-a: rgba(237, 20, 91, 0.14);
+  --glow-b: rgba(237, 20, 91, 0.08);
 
   --surface: rgba(255, 255, 255, 0.72);
   --surface-hover: rgba(255, 255, 255, 0.92);
@@ -75,7 +76,7 @@
   --field-bg: rgba(255, 255, 255, 0.85);
 
   --shadow-md: 0 20px 50px -28px rgba(30, 58, 138, 0.35);
-  --shadow-glow: 0 0 0 1px rgba(59, 130, 246, 0.25), 0 24px 60px -26px rgba(37, 99, 235, 0.4);
+  --shadow-glow: 0 0 0 1px rgba(237, 20, 91, 0.22), 0 24px 60px -26px rgba(237, 20, 91, 0.35);
 
   --success: #059669;
   --success-bg: rgba(5, 150, 105, 0.12);
@@ -112,7 +113,7 @@ body {
   isolation: isolate;
 }
 
-/* Ambient spacetime glow behind everything. */
+/* Ambient FIAP magenta glow behind everything. */
 #root::before {
   content: "";
   position: fixed;
@@ -121,7 +122,7 @@ body {
   background:
     radial-gradient(60% 55% at 18% 0%, var(--glow-a), transparent 60%),
     radial-gradient(50% 50% at 100% 8%, var(--glow-b), transparent 55%),
-    radial-gradient(80% 60% at 50% 120%, rgba(37, 99, 235, 0.1), transparent 60%);
+    radial-gradient(80% 60% at 50% 120%, rgba(237, 20, 91, 0.08), transparent 60%);
   pointer-events: none;
 }
 
@@ -139,7 +140,7 @@ button {
 }
 
 ::selection {
-  background: rgba(59, 130, 246, 0.35);
+  background: rgba(237, 20, 91, 0.35);
 }
 
 ::-webkit-scrollbar {

@@ -98,7 +98,7 @@
 }
 
 .download:not(:disabled):hover {
-  box-shadow: 0 10px 26px -12px rgba(37, 99, 235, 0.8);
+  box-shadow: 0 10px 26px -12px rgba(237, 20, 91, 0.8);
 }
 
 .download:disabled {

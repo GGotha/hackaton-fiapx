@@ -13,7 +13,8 @@
       "!**/*.gen.ts",
       "!**/jest.config.*",
       "!**/webpack.config.js",
-      "!**/*.swcrc"
+      "!**/*.swcrc",
+      "!**/*.svg"
     ]
   },
   "formatter": {

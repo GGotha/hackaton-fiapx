@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/images/fiap-logo.png" alt="FIAP" width="200" />
+
 # FIAP X — Video Processing Platform
 
 **Upload a video, get every frame back as a downloadable `.zip`.**

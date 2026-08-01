@@ -1,7 +1,8 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Loader2, Lock, Mail, User, Zap } from 'lucide-react';
+import { Loader2, Lock, Mail, User } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import { Navigate } from 'react-router-dom';
+import fiapLogo from '../assets/fiap-logo.svg';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { useAuth } from '../providers/auth';
 import styles from './Login.module.css';
@@ -79,12 +80,8 @@ export function Login() {
         transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
       >
         <div className={styles.brand}>
-          <span className={styles.mark}>
-            <Zap size={20} strokeWidth={2.6} />
-          </span>
-          <span className={styles.name}>
-            FIAP<span className={styles.accent}>X</span>
-          </span>
+          <img src={fiapLogo} className={styles.logo} alt="FIAP" />
+          <span className={styles.accent}>X</span>
         </div>
 
         <h1 className={styles.title}>{isSignup ? 'Create your account' : 'Welcome back'}</h1>

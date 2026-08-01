@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
-import { LogOut, Zap } from 'lucide-react';
+import { LogOut } from 'lucide-react';
+import fiapLogo from '../assets/fiap-logo.svg';
 import { useAuth } from '../providers/auth';
 import styles from './Header.module.css';
 import { ThemeToggle } from './ThemeToggle';
@@ -10,12 +11,8 @@ export function Header() {
   return (
     <header className={styles.header}>
       <div className={styles.brand}>
-        <span className={styles.mark}>
-          <Zap size={18} strokeWidth={2.6} />
-        </span>
-        <span className={styles.name}>
-          FIAP<span className={styles.accent}>X</span>
-        </span>
+        <img src={fiapLogo} className={styles.logo} alt="FIAP" />
+        <span className={styles.accent}>X</span>
       </div>
 
       <div className={styles.actions}>

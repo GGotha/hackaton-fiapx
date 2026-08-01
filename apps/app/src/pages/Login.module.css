@@ -31,25 +31,17 @@
   margin-bottom: 26px;
 }
 
-.mark {
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  color: #fff;
-  background: linear-gradient(135deg, var(--accent), var(--cyan));
-  box-shadow: 0 10px 26px -10px rgba(37, 99, 235, 0.8);
-}
-
-.name {
-  font-size: 20px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+.logo {
+  height: 26px;
+  width: auto;
+  display: block;
 }
 
 .accent {
   color: var(--accent);
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 .title {
@@ -158,7 +150,7 @@
 
 .input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.22);
+  box-shadow: 0 0 0 3px rgba(237, 20, 91, 0.22);
 }
 
 .error {
@@ -185,7 +177,7 @@
 }
 
 .submit:not(:disabled):hover {
-  box-shadow: 0 14px 34px -14px rgba(37, 99, 235, 0.9);
+  box-shadow: 0 14px 34px -14px rgba(237, 20, 91, 0.9);
 }
 
 .submit:disabled {
