@@ -1,0 +1,13 @@
+# Terraform working dirs and provider caches
+**/.terraform/*
+
+# State and plans (use a remote encrypted backend instead)
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+*.tfplan
+
+# Secrets — commit only the example
+*.tfvars
+!*.tfvars.example
