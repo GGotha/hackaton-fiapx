@@ -1,0 +1,38 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compileOnSave": false,
+  "files": [],
+  "references": [
+    {
+      "path": "./apps/api"
+    },
+    {
+      "path": "./apps/auth"
+    },
+    {
+      "path": "./apps/worker"
+    },
+    {
+      "path": "./libs/contracts"
+    },
+    {
+      "path": "./apps/app"
+    },
+    {
+      "path": "./libs/database"
+    },
+    {
+      "path": "./libs/storage"
+    },
+    {
+      "path": "./libs/messaging"
+    },
+    {
+      "path": "./libs/observability"
+    },
+    {
+      "path": "./apps/notification"
+    }
+  ],
+  "compilerOptions": {}
+}

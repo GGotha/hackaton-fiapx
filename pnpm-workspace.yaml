@@ -1,0 +1,9 @@
+packages:
+  - 'apps/*'
+  - 'libs/*'
+
+onlyBuiltDependencies:
+  - '@swc/core'
+  - esbuild
+  - ffmpeg-static
+  - nx
