@@ -32,7 +32,8 @@ flowchart TB
   end
 
   subgraph infra[Infrastructure]
-    pg[("PostgreSQL<br/>metadata + status")]
+    mongo[("MongoDB<br/>identity")]
+    pg[("PostgreSQL<br/>video metadata + status")]
     s3[("S3 / MinIO<br/>raw video + zip")]
     mq{{"RabbitMQ<br/>fiapx.videos"}}
     redis[("Redis<br/>cache + pub/sub")]
@@ -43,6 +44,7 @@ flowchart TB
   app -->|HTTP + WebSocket| kong
   kong --> api
   kong --> auth
+  auth -->|users · sessions · jwks| mongo
 
   api --> pg
   api --> s3
@@ -68,7 +70,7 @@ flowchart TB
 | App | Runtime | Owns |
 |---|---|---|
 | **api** | NestJS (HTTP + Socket.IO) | Accepts multipart uploads (JWT-protected), stores the raw file in S3, writes the `Video` row, publishes `video.process`, serves the paginated status list and presigned download URLs, hosts the WebSocket gateway, and exposes Swagger at `/api/docs`. |
-| **auth** | NestJS + better-auth | Email/password accounts. Issues short-lived **EdDSA JWTs** (1h) with an issuer/audience and a `{ email, name }` payload, and publishes the **JWKS** the `api` verifies against. |
+| **auth** | NestJS + better-auth | Email/password accounts, persisted in **MongoDB** via better-auth's `mongodbAdapter`. Issues short-lived **EdDSA JWTs** (1h) with an issuer/audience and a `{ email, name }` payload, and publishes the **JWKS** the `api` verifies against. |
 | **worker** | NestJS (RabbitMQ consumer) | Competing consumer on `video.process`: pulls the video from S3, extracts frames with ffmpeg, zips them, uploads the ZIP, updates status, and publishes `video.completed` / `video.failed`. Stateless — scale by replica count. |
 | **notification** | NestJS (RabbitMQ consumer) | Consumes `video.completed` / `video.failed` and emails the user via Resend (dry-run when `RESEND_API_KEY` is empty). |
 | **app** | React + Vite | Spacetime-themed SPA: drag-drop upload with progress, live status list, downloads, dark/light toggle. |
@@ -217,15 +219,16 @@ clients it happens to hold.
   replicas increases throughput linearly until you saturate CPU (ffmpeg) or S3 bandwidth. No
   coordination, no sharding — RabbitMQ does the load balancing.
 - **Stateless services.** `api`, `auth`, `worker`, and `notification` keep no local state. All state
-  lives in Postgres (metadata), S3 (binaries), RabbitMQ (in-flight jobs), or Redis (cache/pub-sub).
-  That's what makes them safe to run behind Kong or a Kubernetes `Deployment` with N replicas.
+  lives in MongoDB (identity), Postgres (video metadata), S3 (binaries), RabbitMQ (in-flight jobs),
+  or Redis (cache/pub-sub). That's what makes them safe to run behind Kong or a Kubernetes
+  `Deployment` with N replicas.
 - **Bursts are absorbed, not dropped.** Uploads return `202` in milliseconds; the actual work parks
   in the queue and drains at the workers' pace.
 - **Failures are contained.** Poison messages dead-letter; a crashed worker's job is redelivered;
   the user is emailed on failure.
 - **Backing services are swappable.** Locally, S3 is MinIO and everything runs in Compose. In a
-  cloud deployment the same interfaces point at managed Postgres, ElastiCache/Redis, Amazon MQ/
-  RabbitMQ, and S3 — no application code changes, only configuration.
+  cloud deployment the same interfaces point at a managed MongoDB, managed Postgres, ElastiCache/
+  Redis, Amazon MQ/RabbitMQ, and S3 — no application code changes, only configuration.
 
 ## Technology choices
 
@@ -241,11 +244,19 @@ broker: plain Redis lists don't give you the durability, acking, and dead-letter
 the "no lost request" requirement demands. Using each tool for what it's best at keeps the guarantees
 honest.
 
-**S3 for binaries, Postgres for metadata.** Videos and ZIPs are large and opaque; they belong in
-object storage, which is cheap, durable, and gives us presigned URLs so downloads never proxy through
-the API. Postgres holds only the rows that describe them — status, keys, frame counts, timestamps —
-which keeps the database small and fast and its indexes meaningful. The API hands out a presigned
-`GET` (15-minute TTL) instead of streaming bytes itself.
+**S3 for binaries, Postgres for video metadata.** Videos and ZIPs are large and opaque; they belong
+in object storage, which is cheap, durable, and gives us presigned URLs so downloads never proxy
+through the API. Postgres holds only the rows that describe them — status, keys, frame counts,
+timestamps — which keeps the database small and fast and its indexes meaningful. The API hands out a
+presigned `GET` (15-minute TTL) instead of streaming bytes itself.
+
+**MongoDB for identity — polyglot persistence.** The `auth` bounded context owns its own store:
+better-auth persists users, sessions, accounts, verifications, and JWKS through its `mongodbAdapter`
+against the `fiapx_auth` database. MongoDB is schemaless, so identity needs no SQL migration —
+better-auth creates its collections on first use. Keeping identity out of the video-processing
+Postgres gives us **database per (bounded) context**: **MongoDB** (identity) + **PostgreSQL** (video
+metadata) + **Redis** (cache/realtime) + **S3** (binaries), each store chosen for the shape of the
+data it holds rather than forced into a single engine.
 
 **NestJS + DDD per service.** A consistent module/provider model across all four backend apps, with a
 clean `domain → application → infrastructure → interface` split so business logic stays free of I/O

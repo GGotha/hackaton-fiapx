@@ -41,14 +41,15 @@ without dropping a single request.
 - **Live status** — a WebSocket feed pushes `PENDING → PROCESSING → COMPLETED/FAILED` transitions to the browser in real time.
 - **Auth built in** — email/password accounts issuing short-lived EdDSA JWTs, verified against a JWKS endpoint.
 - **Email on completion & failure** — the notification service emails the user via Resend (dry-run when no API key is set).
-- **Spacetime-themed UI** — React + Vite, drag-and-drop upload with progress, dark/light toggle, framer-motion throughout.
+- **FIAP-branded UI (pt-BR)** — React + Vite with the official FIAP logo and magenta palette, a Brazilian-Portuguese interface, drag-and-drop upload with progress, dark/light toggle, and framer-motion throughout.
 - **Observable** — every service exposes Prometheus `/metrics` and a `/health` probe, wired into a Grafana dashboard.
 
 ## 🏗 Architecture
 
-A monorepo of five deployable apps behind a **Kong** API gateway, backed by Postgres, S3, RabbitMQ,
-and Redis. A fuller write-up — component diagram, sequence diagram, RabbitMQ topology, and the
-tech-choice rationale — lives in **[docs/architecture.md](docs/architecture.md)**.
+A monorepo of five deployable apps behind a **Kong** API gateway, with polyglot persistence —
+MongoDB (identity), Postgres (video metadata), S3 (binaries), RabbitMQ, and Redis. A fuller write-up
+— component diagram, sequence diagram, RabbitMQ topology, and the tech-choice rationale — lives in
+**[docs/architecture.md](docs/architecture.md)**.
 
 ```mermaid
 flowchart LR
@@ -66,7 +67,8 @@ flowchart LR
   end
 
   subgraph data[Infrastructure]
-    pg[(Postgres)]
+    mongo[(MongoDB · identity)]
+    pg[(Postgres · videos)]
     s3[(S3 / MinIO)]
     mq{{RabbitMQ}}
     redis[(Redis pub/sub + cache)]
@@ -75,6 +77,7 @@ flowchart LR
   app -->|HTTP + WebSocket| kong
   kong --> api
   kong --> auth
+  auth -->|users / sessions| mongo
   api -->|metadata| pg
   api -->|raw video / zip| s3
   api -->|publish video.process| mq
@@ -111,7 +114,7 @@ Every requirement from the hackathon brief and how it is met in this codebase:
 | **User/password** authentication | `auth` service (better-auth) with email/password, issuing EdDSA **JWTs**; `api` verifies them against the **JWKS** endpoint. |
 | **List a user's videos** with status | Paginated `GET /api/videos` scoped to the caller, plus live `video:status` updates over WebSocket. |
 | **Notify on error** (and success) | `notification` service consumes `video.failed` / `video.completed` and emails via **Resend**. |
-| **Persist all data** | **Postgres** for metadata/status, **S3** (MinIO locally) for the binaries (raw video + ZIP). |
+| **Persist all data** | **Postgres** for video metadata/status, **MongoDB** for identity (better-auth), and **S3** (MinIO locally) for the binaries (raw video + ZIP). |
 | **Scalable · versioned · tested · CI/CD** | Stateless microservices — **Docker Compose** for the full local stack, **Kubernetes** (kustomize) and **Terraform** (local + AWS) under `infra/`. Nx monorepo on GitHub, unit + **Testcontainers** integration tests, and a **GitHub Actions** pipeline (Biome → typecheck → test → build). |
 
 ## 🧰 Tech Stack
@@ -120,7 +123,7 @@ Every requirement from the hackathon brief and how it is met in this codebase:
 **Frontend** React 19 · Vite · TanStack Query · framer-motion ·
 **Auth** better-auth (JWT/JWKS, EdDSA) ·
 **Messaging** RabbitMQ (`amqp-connection-manager`) ·
-**Data** PostgreSQL · Redis · S3 (MinIO / LocalStack) ·
+**Data** MongoDB (auth) · PostgreSQL (videos) · Redis (cache/pub-sub) · S3 (MinIO / LocalStack) ·
 **Media** ffmpeg · archiver ·
 **Gateway** Kong ·
 **Email** Resend ·
@@ -130,7 +133,7 @@ Every requirement from the hackathon brief and how it is met in this codebase:
 
 ## 📦 Prerequisites
 
-- **Docker** + Docker Compose (for Postgres, Redis, RabbitMQ, MinIO, Prometheus, Grafana)
+- **Docker** + Docker Compose (for MongoDB, Postgres, Redis, RabbitMQ, MinIO, Prometheus, Grafana)
 - **Node 22**
 - **pnpm 10** (`corepack enable` will provide the pinned version)
 
@@ -147,9 +150,10 @@ docker compose up -d --build
 ```
 
 That builds the service images and starts Postgres (schema auto-applied from
-[`infra/db/init.sql`](infra/db/init.sql)), Redis, RabbitMQ, MinIO (bucket auto-created), Prometheus,
-Grafana, the four NestJS services, the React frontend, and Kong as the single edge gateway. The
-first build takes a couple of minutes; check progress with `docker compose ps`.
+[`infra/db/init.sql`](infra/db/init.sql)), MongoDB (better-auth creates its collections on first
+use), Redis, RabbitMQ, MinIO (bucket auto-created), Prometheus, Grafana, the four NestJS services,
+the React frontend, and Kong as the single edge gateway. The first build takes a couple of minutes;
+check progress with `docker compose ps`.
 
 Prefer hot reload while developing? See [Local development](#-local-development) to run just the
 infra in Docker and the apps through Nx.
@@ -209,7 +213,7 @@ curl -L -o frames.zip "$URL"
 For hot reload, run only the backing services in Docker and the apps through Nx:
 
 ```bash
-docker compose up -d postgres redis rabbitmq minio minio-init prometheus grafana
+docker compose up -d mongo postgres redis rabbitmq minio minio-init prometheus grafana
 pnpm install
 pnpm nx serve @fiapx/api            # NestJS API        -> :3000
 pnpm nx serve @fiapx/auth           # Auth service      -> :3001
@@ -258,7 +262,7 @@ hackaton-fiapx/
 │   ├── messaging/      RabbitMQ topology, publisher, consumer
 │   └── observability/  Prometheus metrics + /health controller
 ├── infra/
-│   ├── db/init.sql     Database creation script (schema + better-auth tables)
+│   ├── db/init.sql     Postgres creation script (videos schema; auth lives in MongoDB)
 │   ├── kong/           Kong declarative gateway config
 │   ├── nginx/          Frontend static-serve config
 │   ├── prometheus/     Prometheus scrape config
@@ -285,7 +289,10 @@ Copy `.env.example` to `.env` and adjust as needed. Defaults are wired for local
 |---|---|---|
 | `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | `fiapx` | Postgres credentials & database. |
 | `POSTGRES_PORT` | `5432` | Host port for Postgres (the repo `.env` uses `5433`). |
-| `DATABASE_URL` | `postgres://fiapx:fiapx@localhost:5432/fiapx` | Connection string used by `api`, `auth`, `worker`. |
+| `DATABASE_URL` | `postgres://fiapx:fiapx@localhost:5432/fiapx` | Postgres connection string used by `api` and `worker` (the `auth` service no longer uses it — it connects to MongoDB via `MONGODB_URI`). |
+| `MONGODB_URI` | `mongodb://fiapx:fiapx@localhost:27017/fiapx_auth?authSource=admin` | MongoDB connection string used by `auth` (better-auth identity store). |
+| `MONGO_INITDB_ROOT_USERNAME` / `MONGO_INITDB_ROOT_PASSWORD` | `fiapx` | MongoDB root credentials & database. |
+| `MONGO_PORT` | `27017` | Host port for MongoDB. |
 | `REDIS_PORT` / `REDIS_URL` | `6379` / `redis://localhost:6379` | Redis cache + pub/sub for WebSocket fan-out. |
 | `RABBITMQ_DEFAULT_USER` / `RABBITMQ_DEFAULT_PASS` | `fiapx` | RabbitMQ credentials. |
 | `RABBITMQ_PORT` / `RABBITMQ_MGMT_PORT` | `5672` / `15672` | AMQP and management UI ports. |
@@ -341,7 +348,7 @@ The system is built to absorb bursts without dropping work:
   or a spike parks work in the queue rather than losing it. Poison messages dead-letter to
   `video.process.dlq` instead of hot-looping.
 - **Stateless services** — `api`, `auth`, and the consumers hold no local state (everything lives in
-  Postgres/Redis/S3/RabbitMQ), so they scale out cleanly behind Kong or a Kubernetes Service.
+  MongoDB/Postgres/Redis/S3/RabbitMQ), so they scale out cleanly behind Kong or a Kubernetes Service.
 
 See [docs/architecture.md](docs/architecture.md#scaling--resilience) for the full rationale.
 
@@ -355,20 +362,28 @@ See [docs/architecture.md](docs/architecture.md#scaling--resilience) for the ful
   kubernetes/helm providers) and an `aws/` root that provisions VPC, EKS, RDS Postgres, ElastiCache
   Redis, Amazon MQ (RabbitMQ), and an S3 bucket with least-privilege IRSA access.
 
-## 🗄 Database
+## 🗄 Databases
 
-The single source of truth for the schema is **[`infra/db/init.sql`](infra/db/init.sql)**. It runs
-automatically on first Postgres startup (mounted into `/docker-entrypoint-initdb.d`) and is equally
-usable standalone:
+**Polyglot persistence** — each bounded context owns the store that fits it best: **MongoDB** for
+identity, **PostgreSQL** for video metadata, **Redis** for cache and realtime, and **S3** for
+binaries. That satisfies "database per (bounded) context".
+
+**PostgreSQL (video-processing context).** The single source of truth for the video schema is
+**[`infra/db/init.sql`](infra/db/init.sql)**. It runs automatically on first Postgres startup
+(mounted into `/docker-entrypoint-initdb.d`) and is equally usable standalone:
 
 ```bash
 psql "$DATABASE_URL" -f infra/db/init.sql
 ```
 
-It creates the `video_status` enum (`PENDING`/`PROCESSING`/`COMPLETED`/`FAILED`), the `videos` table
-(with an `updated_at` trigger and indexes on `(user_id, created_at)` and `status`), and the
-better-auth identity tables (`user`, `session`, `account`, `verification`, `jwks`). Binaries never
-touch Postgres — only object keys pointing into S3.
+It creates **only** the `video_status` enum (`PENDING`/`PROCESSING`/`COMPLETED`/`FAILED`) and the
+`videos` table (with an `updated_at` trigger and indexes on `(user_id, created_at)` and `status`),
+used by `api` and `worker`. Binaries never touch Postgres — only object keys pointing into S3.
+
+**MongoDB (identity context).** The `auth` service persists identity through better-auth's
+`mongodbAdapter` against the `fiapx_auth` database (`MONGODB_URI`). MongoDB is schemaless, so there
+is **no SQL migration for auth**: better-auth creates its collections (`user`, `session`, `account`,
+`verification`, `jwks`) automatically on first use.
 
 ## 📄 License
 
