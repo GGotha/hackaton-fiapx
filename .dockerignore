@@ -1,0 +1,16 @@
+node_modules
+**/node_modules
+dist
+**/dist
+out-tsc
+**/out-tsc
+.nx
+.git
+.github
+coverage
+**/coverage
+*.log
+.env
+.vscode
+*.jpeg
+*.pdf

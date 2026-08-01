@@ -1,0 +1,304 @@
+name: fiapx
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-fiapx}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fiapx}
+      POSTGRES_DB: ${POSTGRES_DB:-fiapx}
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./infra/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-fiapx} -d ${POSTGRES_DB:-fiapx}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [fiapx]
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ['redis-server', '--appendonly', 'yes']
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [fiapx]
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-fiapx}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-fiapx}
+    ports:
+      - '${RABBITMQ_PORT:-5672}:5672'
+      - '${RABBITMQ_MGMT_PORT:-15672}:15672'
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', '-q', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [fiapx]
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: ['server', '/data', '--console-address', ':9001']
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    ports:
+      - '${MINIO_PORT:-9000}:9000'
+      - '${MINIO_CONSOLE_PORT:-9001}:9001'
+    volumes:
+      - minio-data:/data
+    networks: [fiapx]
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on: [minio]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      S3_BUCKET_VIDEOS: ${S3_BUCKET_VIDEOS:-fiapx-videos}
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 $$MINIO_ROOT_USER $$MINIO_ROOT_PASSWORD; do
+        echo 'waiting for minio...'; sleep 1;
+      done;
+      mc mb --ignore-existing local/$$S3_BUCKET_VIDEOS;
+      echo 'bucket ready';
+      "
+    networks: [fiapx]
+
+  prometheus:
+    image: prom/prometheus:latest
+    restart: unless-stopped
+    command: ['--config.file=/etc/prometheus/prometheus.yml']
+    ports:
+      - '${PROMETHEUS_PORT:-9090}:9090'
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    networks: [fiapx]
+
+  grafana:
+    image: grafana/grafana:latest
+    restart: unless-stopped
+    depends_on: [prometheus]
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: 'true'
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    ports:
+      - '${GRAFANA_PORT:-3005}:3000'
+    volumes:
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    networks: [fiapx]
+
+  auth:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP: auth
+    image: fiapx-auth
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      AUTH_PORT: '3001'
+      DATABASE_URL: postgres://fiapx:fiapx@postgres:5432/fiapx
+      AUTH_SECRET: ${AUTH_SECRET:-dev-only-secret-change-me-0123456789abcdef0123456789abcdef}
+      AUTH_BASE_URL: http://localhost:8000
+      AUTH_TRUSTED_ORIGINS: http://localhost:4200,http://localhost:8000
+      JWT_ISSUER: http://localhost:8000
+      JWT_AUDIENCE: fiapx
+    ports:
+      - '3001:3001'
+    healthcheck:
+      test: ['CMD', 'node', '-e', "require('http').get('http://localhost:3001/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks: [fiapx]
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP: api
+    image: fiapx-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+      auth:
+        condition: service_healthy
+    environment:
+      API_PORT: '3000'
+      DATABASE_URL: postgres://fiapx:fiapx@postgres:5432/fiapx
+      REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://fiapx:fiapx@rabbitmq:5672
+      S3_ENDPOINT: http://minio:9000
+      S3_PUBLIC_ENDPOINT: http://localhost:9000
+      S3_REGION: us-east-1
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: minioadmin
+      S3_BUCKET_VIDEOS: fiapx-videos
+      S3_FORCE_PATH_STYLE: 'true'
+      JWKS_URL: http://auth:3001/api/auth/jwks
+      JWT_ISSUER: http://localhost:8000
+      JWT_AUDIENCE: fiapx
+      AUTH_TRUSTED_ORIGINS: http://localhost:4200,http://localhost:8000
+      MAX_VIDEO_MB: '200'
+    ports:
+      - '3000:3000'
+    healthcheck:
+      test: ['CMD', 'node', '-e', "require('http').get('http://localhost:3000/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks: [fiapx]
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP: worker
+        INSTALL_FFMPEG: 'true'
+    image: fiapx-worker
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    environment:
+      WORKER_METRICS_PORT: '3002'
+      DATABASE_URL: postgres://fiapx:fiapx@postgres:5432/fiapx
+      REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://fiapx:fiapx@rabbitmq:5672
+      S3_ENDPOINT: http://minio:9000
+      S3_REGION: us-east-1
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: minioadmin
+      S3_BUCKET_VIDEOS: fiapx-videos
+      S3_FORCE_PATH_STYLE: 'true'
+      FRAME_RATE: '1'
+      RABBITMQ_PREFETCH: '4'
+      FFMPEG_PATH: /usr/bin/ffmpeg
+    healthcheck:
+      test: ['CMD', 'node', '-e', "require('http').get('http://localhost:3002/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks: [fiapx]
+
+  notification:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP: notification
+    image: fiapx-notification
+    restart: unless-stopped
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      NOTIFICATION_METRICS_PORT: '3003'
+      RABBITMQ_URL: amqp://fiapx:fiapx@rabbitmq:5672
+      RABBITMQ_PREFETCH: '4'
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_FROM: FIAP X <onboarding@resend.dev>
+      NOTIFY_DRY_RUN: 'true'
+    healthcheck:
+      test: ['CMD', 'node', '-e', "require('http').get('http://localhost:3003/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks: [fiapx]
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+      args:
+        VITE_API_URL: http://localhost:8000
+        VITE_AUTH_URL: http://localhost:8000
+    image: fiapx-app
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+    ports:
+      - '4200:80'
+    networks: [fiapx]
+
+  kong:
+    image: kong:3.7
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+    environment:
+      KONG_DATABASE: 'off'
+      KONG_DECLARATIVE_CONFIG: /kong/kong.yml
+      KONG_PROXY_LISTEN: 0.0.0.0:8000
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+    volumes:
+      - ./infra/kong/kong.yml:/kong/kong.yml:ro
+    ports:
+      - '8000:8000'
+      - '8001:8001'
+    networks: [fiapx]
+
+volumes:
+  postgres-data:
+  redis-data:
+  rabbitmq-data:
+  minio-data:
+  grafana-data:
+
+networks:
+  fiapx:
+    driver: bridge

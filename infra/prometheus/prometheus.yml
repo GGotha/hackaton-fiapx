@@ -1,0 +1,30 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Targets resolve either to host-run services (host.docker.internal) during the
+  # local dev loop, or to compose service names when the full stack runs in Docker.
+  - job_name: fiapx-api
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['host.docker.internal:3000', 'api:3000']
+
+  - job_name: fiapx-auth
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['host.docker.internal:3001', 'auth:3001']
+
+  - job_name: fiapx-worker
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['host.docker.internal:3002', 'worker:3002']
+
+  - job_name: fiapx-notification
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['host.docker.internal:3003', 'notification:3003']
