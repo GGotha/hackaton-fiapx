@@ -25,7 +25,7 @@ export function Header() {
           whileTap={{ scale: 0.95 }}
         >
           <LogOut size={16} />
-          <span className={styles.logoutLabel}>Log out</span>
+          <span className={styles.logoutLabel}>Sair</span>
         </motion.button>
       </div>
     </header>

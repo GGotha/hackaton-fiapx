@@ -21,9 +21,9 @@ export function Dashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
         >
-          <h1 className={styles.heroTitle}>Video processing, at light speed.</h1>
+          <h1 className={styles.heroTitle}>Processamento de vídeo na velocidade da luz.</h1>
           <p className={styles.heroSubtitle}>
-            Upload a video and we&apos;ll extract every frame into a downloadable archive.
+            Envie um vídeo e extrairemos cada quadro em um arquivo para download.
           </p>
         </motion.section>
 
@@ -41,7 +41,7 @@ export function Dashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
         >
-          <h2 className={styles.sectionTitle}>Your library</h2>
+          <h2 className={styles.sectionTitle}>Sua biblioteca</h2>
           <VideoList enabled={Boolean(token)} />
         </motion.section>
       </div>

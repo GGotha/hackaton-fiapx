@@ -33,7 +33,7 @@ export function VideoCard({ video }: { video: VideoDto }) {
         <div className={styles.meta}>
           <span>{relativeTime(video.createdAt)}</span>
           {video.frameCount != null ? (
-            <span className={styles.metaItem}>{formatCount(video.frameCount)} frames</span>
+            <span className={styles.metaItem}>{formatCount(video.frameCount)} quadros</span>
           ) : null}
           {video.sizeBytes != null ? (
             <span className={styles.metaItem}>{formatBytes(video.sizeBytes)}</span>
@@ -53,7 +53,7 @@ export function VideoCard({ video }: { video: VideoDto }) {
         ) : (
           <Download size={16} />
         )}
-        <span className={styles.downloadLabel}>Download</span>
+        <span className={styles.downloadLabel}>Baixar</span>
       </motion.button>
     </motion.article>
   );

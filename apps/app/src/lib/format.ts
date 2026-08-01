@@ -1,4 +1,4 @@
-const relativeFormatter = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
+const relativeFormatter = new Intl.RelativeTimeFormat('pt-BR', { numeric: 'auto' });
 
 const DIVISIONS: { amount: number; unit: Intl.RelativeTimeFormatUnit }[] = [
   { amount: 60, unit: 'seconds' },
@@ -23,7 +23,7 @@ export function relativeTime(iso: string): string {
   return relativeFormatter.format(Math.round(duration), 'years');
 }
 
-const numberFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 });
+const numberFormatter = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 });
 
 export function formatBytes(bytes: number | null): string {
   if (bytes == null) return '';

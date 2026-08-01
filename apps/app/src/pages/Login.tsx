@@ -28,13 +28,13 @@ export function Login() {
 
   const validate = (): string | null => {
     if (isSignup && name.trim().length < 2) {
-      return 'Please enter your name.';
+      return 'Informe seu nome.';
     }
     if (!EMAIL_PATTERN.test(email)) {
-      return 'Please enter a valid email address.';
+      return 'Informe um endereço de e-mail válido.';
     }
     if (password.length < 8) {
-      return 'Password must be at least 8 characters.';
+      return 'A senha deve ter no mínimo 8 caracteres.';
     }
     return null;
   };
@@ -61,7 +61,7 @@ export function Login() {
         await signIn(email, password);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong.');
+      setError(err instanceof Error ? err.message : 'Algo deu errado.');
     } finally {
       setSubmitting(false);
     }
@@ -84,11 +84,11 @@ export function Login() {
           <span className={styles.accent}>X</span>
         </div>
 
-        <h1 className={styles.title}>{isSignup ? 'Create your account' : 'Welcome back'}</h1>
+        <h1 className={styles.title}>{isSignup ? 'Crie sua conta' : 'Bem-vindo de volta'}</h1>
         <p className={styles.subtitle}>
           {isSignup
-            ? 'Start turning videos into frames in seconds.'
-            : 'Sign in to launch and track your video jobs.'}
+            ? 'Comece a transformar vídeos em quadros em segundos.'
+            : 'Entre para iniciar e acompanhar seus processamentos de vídeo.'}
         </p>
 
         <div className={styles.tabs} role="tablist">
@@ -99,7 +99,7 @@ export function Login() {
             className={`${styles.tab} ${!isSignup ? styles.tabActive : ''}`}
             onClick={() => switchMode('signin')}
           >
-            Sign in
+            Entrar
           </button>
           <button
             type="button"
@@ -108,7 +108,7 @@ export function Login() {
             className={`${styles.tab} ${isSignup ? styles.tabActive : ''}`}
             onClick={() => switchMode('signup')}
           >
-            Sign up
+            Cadastrar
           </button>
           <motion.span
             className={styles.tabGlider}
@@ -128,7 +128,7 @@ export function Login() {
                 exit={{ opacity: 0, height: 0 }}
               >
                 <label className={styles.label} htmlFor="name">
-                  Name
+                  Nome
                 </label>
                 <div className={styles.inputWrap}>
                   <User size={17} className={styles.inputIcon} />
@@ -148,7 +148,7 @@ export function Login() {
 
           <div className={styles.field}>
             <label className={styles.label} htmlFor="email">
-              Email
+              E-mail
             </label>
             <div className={styles.inputWrap}>
               <Mail size={17} className={styles.inputIcon} />
@@ -157,7 +157,7 @@ export function Login() {
                 className={styles.input}
                 type="email"
                 autoComplete="email"
-                placeholder="you@example.com"
+                placeholder="voce@exemplo.com"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
               />
@@ -166,7 +166,7 @@ export function Login() {
 
           <div className={styles.field}>
             <label className={styles.label} htmlFor="password">
-              Password
+              Senha
             </label>
             <div className={styles.inputWrap}>
               <Lock size={17} className={styles.inputIcon} />
@@ -175,7 +175,7 @@ export function Login() {
                 className={styles.input}
                 type="password"
                 autoComplete={isSignup ? 'new-password' : 'current-password'}
-                placeholder="At least 8 characters"
+                placeholder="No mínimo 8 caracteres"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
               />
@@ -204,9 +204,9 @@ export function Login() {
             {submitting ? (
               <Loader2 size={18} className={styles.spinner} />
             ) : isSignup ? (
-              'Create account'
+              'Criar conta'
             ) : (
-              'Sign in'
+              'Entrar'
             )}
           </motion.button>
         </form>

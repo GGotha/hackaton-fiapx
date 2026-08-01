@@ -13,7 +13,7 @@ export function ThemeToggle() {
       className={styles.toggle}
       onClick={toggleTheme}
       whileTap={{ scale: 0.92 }}
-      aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
+      aria-label={isDark ? 'Mudar para o tema claro' : 'Mudar para o tema escuro'}
     >
       <AnimatePresence mode="wait" initial={false}>
         <motion.span

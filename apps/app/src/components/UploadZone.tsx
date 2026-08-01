@@ -33,7 +33,7 @@ export function UploadZone() {
   const message =
     error && typeof error === 'object' && 'message' in error
       ? String((error as { message: unknown }).message)
-      : 'Upload failed. Please try again.';
+      : 'Falha no envio. Tente novamente.';
 
   return (
     <motion.div
@@ -79,7 +79,7 @@ export function UploadZone() {
               <FileVideo size={26} />
             </span>
             <div className={styles.copy}>
-              <p className={styles.title}>Uploading… {progress}%</p>
+              <p className={styles.title}>Enviando… {progress}%</p>
               <div className={styles.progressTrack}>
                 <motion.div
                   className={styles.progressBar}
@@ -101,9 +101,9 @@ export function UploadZone() {
               <UploadCloud size={28} />
             </span>
             <div className={styles.copy}>
-              <p className={styles.title}>Drop a video to process</p>
+              <p className={styles.title}>Solte um vídeo para processar</p>
               <p className={styles.hint}>
-                Drag &amp; drop or <span className={styles.link}>browse</span> · up to{' '}
+                Arraste e solte ou <span className={styles.link}>selecione</span> · até{' '}
                 {formatBytes(200 * 1024 * 1024)}
               </p>
             </div>

@@ -13,19 +13,19 @@ export function Pagination({ page, totalPages, onChange }: PaginationProps) {
   }
 
   return (
-    <nav className={styles.pagination} aria-label="Pagination">
+    <nav className={styles.pagination} aria-label="Paginação">
       <button
         type="button"
         className={styles.button}
         onClick={() => onChange(page - 1)}
         disabled={page <= 1}
-        aria-label="Previous page"
+        aria-label="Página anterior"
       >
         <ChevronLeft size={16} />
       </button>
 
       <span className={styles.status}>
-        Page <strong>{page}</strong> of {totalPages}
+        Página <strong>{page}</strong> de {totalPages}
       </span>
 
       <button
@@ -33,7 +33,7 @@ export function Pagination({ page, totalPages, onChange }: PaginationProps) {
         className={styles.button}
         onClick={() => onChange(page + 1)}
         disabled={page >= totalPages}
-        aria-label="Next page"
+        aria-label="Próxima página"
       >
         <ChevronRight size={16} />
       </button>

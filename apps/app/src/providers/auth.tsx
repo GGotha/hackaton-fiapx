@@ -83,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (email: string, password: string) => {
       const { error } = await authClient.signIn.email({ email, password });
       if (error) {
-        throw new Error(error.message ?? 'Unable to sign in');
+        throw new Error(error.message ?? 'Não foi possível entrar');
       }
       await hydrate();
       setStatus('authenticated');
@@ -95,7 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (name: string, email: string, password: string) => {
       const { error } = await authClient.signUp.email({ email, password, name });
       if (error) {
-        throw new Error(error.message ?? 'Unable to create your account');
+        throw new Error(error.message ?? 'Não foi possível criar sua conta');
       }
       await hydrate();
       setStatus('authenticated');

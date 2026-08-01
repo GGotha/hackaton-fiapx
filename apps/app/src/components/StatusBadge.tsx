@@ -8,10 +8,10 @@ interface StatusBadgeProps {
 }
 
 const CONFIG: Record<VideoStatus, { label: string; tone: string; icon: typeof Clock }> = {
-  [VideoStatus.Pending]: { label: 'Pending', tone: styles.pending, icon: Clock },
-  [VideoStatus.Processing]: { label: 'Processing', tone: styles.processing, icon: Loader2 },
-  [VideoStatus.Completed]: { label: 'Completed', tone: styles.completed, icon: CheckCircle2 },
-  [VideoStatus.Failed]: { label: 'Failed', tone: styles.failed, icon: AlertTriangle },
+  [VideoStatus.Pending]: { label: 'Pendente', tone: styles.pending, icon: Clock },
+  [VideoStatus.Processing]: { label: 'Processando', tone: styles.processing, icon: Loader2 },
+  [VideoStatus.Completed]: { label: 'Concluído', tone: styles.completed, icon: CheckCircle2 },
+  [VideoStatus.Failed]: { label: 'Falhou', tone: styles.failed, icon: AlertTriangle },
 };
 
 export function StatusBadge({ status, error }: StatusBadgeProps) {

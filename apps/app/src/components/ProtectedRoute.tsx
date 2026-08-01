@@ -7,7 +7,7 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
   const { status } = useAuth();
 
   if (status === 'loading') {
-    return <Loader label="Restoring your session" />;
+    return <Loader label="Restaurando sua sessão" />;
   }
 
   if (status === 'unauthenticated') {

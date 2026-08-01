@@ -18,7 +18,7 @@ export function VideoList({ enabled }: { enabled: boolean }) {
   const { data, isPending, isError, refetch } = useVideos(page, PAGE_SIZE, enabled);
 
   if (isPending) {
-    return <Loader label="Loading your library" />;
+    return <Loader label="Carregando sua biblioteca" />;
   }
 
   if (isError) {
@@ -27,9 +27,9 @@ export function VideoList({ enabled }: { enabled: boolean }) {
         <span className={`${styles.stateIcon} ${styles.stateError}`}>
           <AlertTriangle size={22} />
         </span>
-        <p className={styles.stateTitle}>We couldn&apos;t load your videos</p>
+        <p className={styles.stateTitle}>Não foi possível carregar seus vídeos</p>
         <button type="button" className={styles.retry} onClick={() => void refetch()}>
-          Try again
+          Tentar novamente
         </button>
       </div>
     );
@@ -41,8 +41,8 @@ export function VideoList({ enabled }: { enabled: boolean }) {
         <span className={styles.stateIcon}>
           <Film size={22} />
         </span>
-        <p className={styles.stateTitle}>No videos yet</p>
-        <p className={styles.stateHint}>Upload a video above and it will show up here.</p>
+        <p className={styles.stateTitle}>Nenhum vídeo ainda</p>
+        <p className={styles.stateHint}>Envie um vídeo acima e ele aparecerá aqui.</p>
       </div>
     );
   }
