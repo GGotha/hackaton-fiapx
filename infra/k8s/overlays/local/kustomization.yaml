@@ -30,5 +30,6 @@ patches:
         value: IfNotPresent
   - path: patches/worker-resources.yaml
   - path: patches/postgres-resources.yaml
+  - path: patches/mongo-resources.yaml
   - path: patches/rabbitmq-resources.yaml
   - path: patches/minio-resources.yaml

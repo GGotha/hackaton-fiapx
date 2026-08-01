@@ -1,19 +1,22 @@
 import { betterAuth } from 'better-auth';
+import { mongodbAdapter } from 'better-auth/adapters/mongodb';
 import { jwt } from 'better-auth/plugins';
-import { Pool } from 'pg';
+import { MongoClient } from 'mongodb';
 import type { AuthConfig } from '../config/config.module';
 
 export const AUTH = Symbol('AUTH');
 
 export type Auth = ReturnType<typeof betterAuth>;
 
-let pool: Pool | undefined;
+let client: MongoClient | undefined;
 
 export function createAuth(config: AuthConfig): Auth {
-  pool = new Pool({ connectionString: config.databaseUrl });
+  // The MongoClient connects lazily, so createAuth stays synchronous. client.db()
+  // uses the database encoded in the connection string (fiapx_auth).
+  client = new MongoClient(config.mongoUri);
 
   return betterAuth({
-    database: pool,
+    database: mongodbAdapter(client.db()),
     baseURL: config.baseUrl,
     basePath: '/api/auth',
     secret: config.secret,
@@ -35,7 +38,7 @@ export function createAuth(config: AuthConfig): Auth {
   }) as unknown as Auth;
 }
 
-export async function closeAuthPool(): Promise<void> {
-  await pool?.end();
-  pool = undefined;
+export async function closeAuthDb(): Promise<void> {
+  await client?.close();
+  client = undefined;
 }

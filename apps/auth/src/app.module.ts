@@ -1,7 +1,7 @@
 import { ObservabilityModule } from '@fiapx/observability';
 import { Module, type OnApplicationShutdown } from '@nestjs/common';
 import { AuthConfigModule, loadConfig } from './config/config.module';
-import { AUTH, closeAuthPool, createAuth } from './infrastructure/auth.factory';
+import { AUTH, closeAuthDb, createAuth } from './infrastructure/auth.factory';
 
 const config = loadConfig();
 
@@ -12,6 +12,6 @@ const config = loadConfig();
 })
 export class AppModule implements OnApplicationShutdown {
   async onApplicationShutdown(): Promise<void> {
-    await closeAuthPool();
+    await closeAuthDb();
   }
 }

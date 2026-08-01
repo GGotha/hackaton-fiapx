@@ -33,6 +33,11 @@ output "rds_endpoint" {
   value       = module.rds.address
 }
 
+output "docdb_endpoint" {
+  description = "DocumentDB (MongoDB-compatible) cluster endpoint (host)."
+  value       = module.documentdb.endpoint
+}
+
 output "redis_endpoint" {
   description = "Redis primary endpoint (host)."
   value       = module.elasticache.primary_endpoint

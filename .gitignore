@@ -66,6 +66,7 @@ processed/
 *.local
 
 test-output
+test-videos
 
 vite.config.*.timestamp*
 vitest.config.*.timestamp*

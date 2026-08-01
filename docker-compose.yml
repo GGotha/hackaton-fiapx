@@ -20,6 +20,23 @@ services:
       retries: 10
     networks: [fiapx]
 
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-fiapx}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-fiapx}
+    ports:
+      - '${MONGO_PORT:-27017}:27017'
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ['CMD', 'mongosh', '--quiet', '--eval', "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [fiapx]
+
   redis:
     image: redis:7-alpine
     restart: unless-stopped
@@ -122,11 +139,11 @@ services:
     image: fiapx-auth
     restart: unless-stopped
     depends_on:
-      postgres:
+      mongo:
         condition: service_healthy
     environment:
       AUTH_PORT: '3001'
-      DATABASE_URL: postgres://fiapx:fiapx@postgres:5432/fiapx
+      MONGODB_URI: mongodb://fiapx:fiapx@mongo:27017/fiapx_auth?authSource=admin
       AUTH_SECRET: ${AUTH_SECRET:-dev-only-secret-change-me-0123456789abcdef0123456789abcdef}
       AUTH_BASE_URL: http://localhost:8000
       AUTH_TRUSTED_ORIGINS: http://localhost:4200,http://localhost:8000
@@ -294,6 +311,7 @@ services:
 
 volumes:
   postgres-data:
+  mongo-data:
   redis-data:
   rabbitmq-data:
   minio-data:

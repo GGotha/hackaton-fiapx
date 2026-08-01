@@ -134,6 +134,43 @@ variable "redis_num_nodes" {
   default     = 1
 }
 
+# ---- DocumentDB (MongoDB — auth identity store) ----
+variable "docdb_username" {
+  description = "DocumentDB master username."
+  type        = string
+  default     = "fiapx"
+}
+
+variable "docdb_password" {
+  description = "DocumentDB master password. Provide via TF_VAR_docdb_password or a gitignored tfvars file."
+  type        = string
+  sensitive   = true
+}
+
+variable "docdb_engine_version" {
+  description = "DocumentDB (MongoDB-compatible) engine version."
+  type        = string
+  default     = "5.0.0"
+}
+
+variable "docdb_instance_class" {
+  description = "DocumentDB instance class."
+  type        = string
+  default     = "db.t3.medium"
+}
+
+variable "docdb_instance_count" {
+  description = "DocumentDB instance count (1 = single primary; >1 adds replicas / failover)."
+  type        = number
+  default     = 1
+}
+
+variable "docdb_auth_database" {
+  description = "Database the auth service uses inside DocumentDB (encoded in MONGODB_URI)."
+  type        = string
+  default     = "fiapx_auth"
+}
+
 # ---- Amazon MQ (RabbitMQ) ----
 variable "mq_username" {
   description = "RabbitMQ admin username."

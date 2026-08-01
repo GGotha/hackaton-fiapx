@@ -73,6 +73,24 @@ module "rds" {
   tags = local.tags
 }
 
+module "documentdb" {
+  source = "./modules/documentdb"
+
+  name       = local.name
+  vpc_id     = module.network.vpc_id
+  subnet_ids = module.network.private_subnet_ids
+
+  ingress_security_group_ids = [module.eks.cluster_security_group_id]
+
+  username       = var.docdb_username
+  password       = var.docdb_password
+  engine_version = var.docdb_engine_version
+  instance_class = var.docdb_instance_class
+  instance_count = var.docdb_instance_count
+
+  tags = local.tags
+}
+
 module "elasticache" {
   source = "./modules/elasticache"
 
@@ -131,7 +149,11 @@ resource "aws_secretsmanager_secret" "app" {
 resource "aws_secretsmanager_secret_version" "app" {
   secret_id = aws_secretsmanager_secret.app.id
   secret_string = jsonencode({
-    DATABASE_URL     = "postgres://${var.db_username}:${var.db_password}@${module.rds.address}:${module.rds.port}/${module.rds.db_name}"
+    DATABASE_URL = "postgres://${var.db_username}:${var.db_password}@${module.rds.address}:${module.rds.port}/${module.rds.db_name}"
+    # DocumentDB enforces TLS and does not support retryable writes, so the auth
+    # service's driver needs tls=true&retryWrites=false. The auth db (fiapx_auth)
+    # is created lazily on first write; the master user authenticates via admin.
+    MONGODB_URI      = "mongodb://${var.docdb_username}:${var.docdb_password}@${module.documentdb.endpoint}:${module.documentdb.port}/${var.docdb_auth_database}?authSource=admin&tls=true&retryWrites=false"
     REDIS_URL        = "redis://${module.elasticache.primary_endpoint}:${module.elasticache.port}"
     RABBITMQ_URL     = replace(module.mq.amqps_endpoint, "amqps://", "amqps://${var.mq_username}:${var.mq_password}@")
     S3_BUCKET_VIDEOS = module.s3.bucket_name

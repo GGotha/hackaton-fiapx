@@ -16,6 +16,7 @@ resources:
   - notification.yaml
   - app.yaml
   - postgres.yaml
+  - mongo.yaml
   - redis.yaml
   - rabbitmq.yaml
   - minio.yaml

@@ -28,11 +28,11 @@ spec:
             - configMapRef:
                 name: fiapx-config
           env:
-            - name: DATABASE_URL
+            - name: MONGODB_URI
               valueFrom:
                 secretKeyRef:
                   name: fiapx-secrets
-                  key: DATABASE_URL
+                  key: MONGODB_URI
             - name: AUTH_SECRET
               valueFrom:
                 secretKeyRef:

@@ -4,7 +4,7 @@ export const AUTH_CONFIG = Symbol('AUTH_CONFIG');
 
 export interface AuthConfig {
   port: number;
-  databaseUrl: string;
+  mongoUri: string;
   baseUrl: string;
   secret: string;
   trustedOrigins: string[];
@@ -23,7 +23,7 @@ function required(name: string): string {
 export function loadConfig(): AuthConfig {
   return {
     port: Number(process.env.AUTH_PORT ?? 3001),
-    databaseUrl: required('DATABASE_URL'),
+    mongoUri: required('MONGODB_URI'),
     baseUrl: process.env.AUTH_BASE_URL ?? 'http://localhost:3001',
     secret: required('AUTH_SECRET'),
     trustedOrigins: (process.env.AUTH_TRUSTED_ORIGINS ?? 'http://localhost:4200')
