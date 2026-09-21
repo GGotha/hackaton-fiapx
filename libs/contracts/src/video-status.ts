@@ -6,8 +6,3 @@ export const VideoStatus = {
 } as const;
 
 export type VideoStatus = (typeof VideoStatus)[keyof typeof VideoStatus];
-
-export const TERMINAL_STATUSES: readonly VideoStatus[] = [
-  VideoStatus.Completed,
-  VideoStatus.Failed,
-];
