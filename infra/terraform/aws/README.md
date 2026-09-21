@@ -1,38 +1,38 @@
-# FIAP X — AWS Terraform (EKS)
+# FIAP X — Terraform AWS (EKS)
 
-Provisions a production-shaped AWS environment for FIAP X and runs the workloads
-on **EKS**, so the same Kubernetes manifests in `infra/k8s` apply unchanged
-(swapping the in-cluster backing services for managed AWS ones).
+Provisiona um ambiente AWS com formato de produção para o FIAP X e roda os workloads
+no **EKS**, de modo que os mesmos manifests Kubernetes em `infra/k8s` se apliquem sem alteração
+(trocando os backing services in-cluster pelos gerenciados da AWS).
 
-## What it creates
+## O que ele cria
 
-| Module        | Resources                                                                 |
+| Módulo        | Recursos                                                                  |
 | ------------- | ------------------------------------------------------------------------- |
-| `network`     | VPC, public/private subnets across N AZs, IGW, NAT gateway(s), routing     |
-| `eks`         | EKS cluster, managed node group, IAM roles, IRSA OIDC provider             |
-| `rds`         | RDS PostgreSQL (encrypted, private) + security group                       |
-| `elasticache` | ElastiCache Redis replication group + security group                       |
-| `mq`          | Amazon MQ for RabbitMQ (AMQPS) + security group                            |
-| `s3`          | Videos bucket (versioned, encrypted, private) + least-privilege IRSA role  |
-| root          | Secrets Manager entry with the assembled connection strings                |
+| `network`     | VPC, subnets públicas/privadas em N AZs, IGW, NAT gateway(s), roteamento   |
+| `eks`         | Cluster EKS, managed node group, roles IAM, provider OIDC do IRSA          |
+| `rds`         | RDS PostgreSQL (criptografado, privado) + security group                   |
+| `elasticache` | Replication group do ElastiCache Redis + security group                    |
+| `mq`          | Amazon MQ para RabbitMQ (AMQPS) + security group                           |
+| `s3`          | Bucket de vídeos (versionado, criptografado, privado) + role IRSA de menor privilégio |
+| root          | Entrada no Secrets Manager com as connection strings montadas              |
 
-Data-tier security groups only allow ingress from the EKS cluster security
-group. The S3 IAM policy is scoped to the single bucket and the api/worker
-service accounts (via IRSA) — no node-wide S3 access, no wildcards.
+Os security groups da camada de dados só permitem ingress a partir do security group
+do cluster EKS. A policy IAM do S3 é restrita ao único bucket e às service accounts
+de api/worker (via IRSA) — sem acesso ao S3 em todo o node, sem wildcards.
 
-## Prerequisites
+## Pré-requisitos
 
 - `terraform >= 1.5`, `awscli`, `kubectl`
-- AWS credentials with permission to create the resources above
-- A globally-unique S3 bucket name (`videos_bucket_name`)
+- Credenciais AWS com permissão para criar os recursos acima
+- Um nome de bucket S3 globalmente único (`videos_bucket_name`)
 
-## Usage
+## Uso
 
 ```bash
 cd infra/terraform/aws
 cp terraform.tfvars.example terraform.tfvars   # then edit
 
-# Secrets via environment (never commit them)
+# Secrets via variáveis de ambiente (nunca faça commit delas)
 export TF_VAR_db_password='...'
 export TF_VAR_mq_password='at-least-12-chars'
 
@@ -41,37 +41,37 @@ terraform plan
 terraform apply
 ```
 
-### Deploy the app onto the cluster
+### Faça o deploy do app no cluster
 
 ```bash
-# 1. Point kubectl at the new cluster (see the kubeconfig_command output)
+# 1. Aponte o kubectl para o novo cluster (veja o output kubeconfig_command)
 aws eks update-kubeconfig --region <region> --name <cluster>
 
-# 2. Install the AWS Load Balancer Controller so the Ingress provisions an ALB
+# 2. Instale o AWS Load Balancer Controller para que o Ingress provisione um ALB
 #    (https://kubernetes-sigs.github.io/aws-load-balancer-controller/).
 
-# 3. Apply the manifests. For AWS you drop the in-cluster postgres/redis/rabbitmq/
-#    minio and point config at the managed endpoints (Terraform outputs); wire the
-#    Secrets Manager entry in with External Secrets or the Secrets Store CSI driver,
-#    and annotate the api/worker service accounts with s3_irsa_role_arn.
+# 3. Aplique os manifests. Na AWS você remove postgres/redis/rabbitmq/minio in-cluster
+#    e aponta a config para os endpoints gerenciados (outputs do Terraform); conecte a
+#    entrada do Secrets Manager via External Secrets ou o Secrets Store CSI driver,
+#    e anote as service accounts de api/worker com s3_irsa_role_arn.
 kubectl apply -k ../../k8s/base
 ```
 
-## Key outputs
+## Outputs principais
 
-`terraform output` exposes `eks_cluster_name`, `rds_endpoint`,
+`terraform output` expõe `eks_cluster_name`, `rds_endpoint`,
 `redis_endpoint`, `rabbitmq_amqps_endpoint`, `videos_bucket_name`,
-`s3_irsa_role_arn`, and `app_secret_arn`.
+`s3_irsa_role_arn` e `app_secret_arn`.
 
-## Notes & assumptions
+## Notas e premissas
 
-- **Compute choice:** EKS (not ECS Fargate) so the Kubernetes manifests are the
-  single deployment definition across local and AWS.
-- The ALB is created by the AWS Load Balancer Controller from the `Ingress`
-  resource; it is not managed directly in Terraform.
-- Defaults favor a low-cost dev footprint (single NAT gateway, single-AZ RDS,
-  single-node Redis/MQ). Flip `db_multi_az`, `redis_num_nodes`,
-  `mq_deployment_mode`, and `single_nat_gateway` for HA.
-- No secrets are hardcoded: DB/MQ passwords come from `TF_VAR_*` and the
-  assembled connection strings live in Secrets Manager (state is still
-  sensitive — use a remote encrypted backend such as S3 + DynamoDB locking).
+- **Escolha de compute:** EKS (não ECS Fargate) para que os manifests Kubernetes sejam a
+  única definição de deploy entre local e AWS.
+- O ALB é criado pelo AWS Load Balancer Controller a partir do recurso `Ingress`;
+  ele não é gerenciado diretamente no Terraform.
+- Os defaults favorecem uma pegada de dev de baixo custo (NAT gateway único, RDS single-AZ,
+  Redis/MQ de nó único). Vire `db_multi_az`, `redis_num_nodes`,
+  `mq_deployment_mode` e `single_nat_gateway` para HA.
+- Nenhum secret é hardcoded: as senhas de DB/MQ vêm de `TF_VAR_*` e as
+  connection strings montadas ficam no Secrets Manager (o state ainda é
+  sensível — use um backend remoto criptografado, como S3 + locking no DynamoDB).

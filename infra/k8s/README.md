@@ -1,64 +1,64 @@
-# FIAP X — Kubernetes manifests
+# FIAP X — Manifests Kubernetes
 
-Kustomize manifests for the FIAP X video-processing platform. Everything lives
-in the `fiapx` namespace.
+Manifests kustomize da plataforma de processamento de vídeo FIAP X. Tudo vive
+no namespace `fiapx`.
 
 ```
-base/                # namespace, app services, backing services, config/secrets, ingress, monitoring
-overlays/local/      # minikube overlay: local images, small resources, single replicas (worker=2)
+base/                # namespace, app services, backing services, config/secrets, ingress, monitoramento
+overlays/local/      # overlay minikube: imagens locais, recursos pequenos, réplica única (worker=2)
 ```
 
-## Layout
+## Estrutura
 
 - **App services** — `api`, `auth`, `worker` (+ HPA), `notification`, `app`
-  (frontend). Each has a Deployment and a Service; the backend services run
-  liveness/readiness probes against `/health` and are annotated for Prometheus
-  scraping on `/metrics`.
-- **Backing services** — `postgres` (StatefulSet, schema loaded from the
-  `postgres-init` ConfigMap generated from `infra/db/init.sql`), `redis`
-  (ephemeral cache), `rabbitmq` and `minio` (StatefulSets), plus `prometheus`
-  and `grafana`.
-- **Config/secrets** — non-secret env in the `fiapx-config` ConfigMap
-  (`base/config.env`); credentials in the `fiapx-secrets` Secret
-  (`base/secrets.env`, dev placeholders — replace for anything shared).
-- **Ingress** — routes `fiapx.local` → frontend, `api.fiapx.local` → api,
+  (frontend). Cada um tem um Deployment e um Service; os serviços de backend rodam
+  probes de liveness/readiness contra `/health` e são anotados para o scraping do
+  Prometheus em `/metrics`.
+- **Backing services** — `postgres` (StatefulSet, schema carregado a partir do
+  ConfigMap `postgres-init` gerado de `infra/db/init.sql`), `redis`
+  (cache efêmero), `rabbitmq` e `minio` (StatefulSets), além de `prometheus`
+  e `grafana`.
+- **Config/secrets** — env não-secreto no ConfigMap `fiapx-config`
+  (`base/config.env`); credenciais no Secret `fiapx-secrets`
+  (`base/secrets.env`, placeholders de dev — substitua para qualquer coisa compartilhada).
+- **Ingress** — roteia `fiapx.local` → frontend, `api.fiapx.local` → api,
   `auth.fiapx.local` → auth (ingressClassName `nginx`).
 
-### JWT / auth URLs
+### URLs de JWT / auth
 
-`JWKS_URL` is server-to-server so it uses the in-cluster DNS name
-(`http://auth:3001/api/auth/jwks`). `AUTH_BASE_URL` and `JWT_ISSUER` must match
-the **browser-facing** auth origin (`http://auth.fiapx.local`) because the
-issuer claim is validated against what clients see. Change the host in
-`base/config.env` (and `base/ingress.yaml`) to match your environment.
+`JWKS_URL` é server-to-server, então usa o nome DNS interno do cluster
+(`http://auth:3001/api/auth/jwks`). `AUTH_BASE_URL` e `JWT_ISSUER` precisam bater
+com a origem de auth **voltada ao navegador** (`http://auth.fiapx.local`), porque a
+claim de issuer é validada contra o que os clientes veem. Altere o host em
+`base/config.env` (e `base/ingress.yaml`) para corresponder ao seu ambiente.
 
-## Validate
+## Validar
 
 ```bash
 kubectl kustomize overlays/local | kubectl apply --dry-run=client -f -
 ```
 
-## Deploy to minikube
+## Deploy no minikube
 
 ```bash
 minikube start --cpus=4 --memory=6g
 minikube addons enable ingress          # ingress controller
-minikube addons enable metrics-server   # for the worker HPA
+minikube addons enable metrics-server   # para o HPA do worker
 
-# Build the app images into minikube's docker so IfNotPresent finds them
+# Builde as imagens dos apps no docker do minikube para o IfNotPresent encontrá-las
 eval "$(minikube docker-env)"
 docker build -t fiapx/api:latest -f apps/api/Dockerfile .
-# ...repeat for auth, worker, notification, app
+# ...repita para auth, worker, notification, app
 
 kubectl apply -k overlays/local
 
-# Map the ingress hosts
+# Mapeie os hosts do ingress
 echo "$(minikube ip) fiapx.local api.fiapx.local auth.fiapx.local" | sudo tee -a /etc/hosts
 ```
 
-The `postgres-init` ConfigMap is generated from a copy of `infra/db/init.sql`
-kept at `base/postgres/init.sql` (kustomize's default load restrictor cannot
-read files outside the kustomization root). Keep the two in sync if the schema
-changes.
+O ConfigMap `postgres-init` é gerado a partir de uma cópia de `infra/db/init.sql`
+mantida em `base/postgres/init.sql` (o load restrictor padrão do kustomize não consegue
+ler arquivos fora da raiz da kustomization). Mantenha os dois em sincronia se o schema
+mudar.
 
-For a Terraform-driven apply of these manifests, see `../terraform/local`.
+Para um apply destes manifests dirigido por Terraform, veja `../terraform/local`.

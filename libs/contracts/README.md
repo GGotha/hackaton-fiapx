@@ -1,11 +1,11 @@
 # contracts
 
-This library was generated with [Nx](https://nx.dev).
+Esta biblioteca foi gerada com [Nx](https://nx.dev).
 
-## Building
+## Build
 
-Run `nx build contracts` to build the library.
+Rode `nx build contracts` para buildar a biblioteca.
 
-## Running unit tests
+## Testes unitários
 
-Run `nx test contracts` to execute the unit tests via [Jest](https://jestjs.io).
+Rode `nx test contracts` para executar os testes unitários via [Jest](https://jestjs.io).

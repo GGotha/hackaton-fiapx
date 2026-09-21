@@ -1,7 +1,7 @@
 # storage
 
-This library was generated with [Nx](https://nx.dev).
+Esta biblioteca foi gerada com [Nx](https://nx.dev).
 
-## Running unit tests
+## Testes unitários
 
-Run `nx test storage` to execute the unit tests via [Jest](https://jestjs.io).
+Rode `nx test storage` para executar os testes unitários via [Jest](https://jestjs.io).
